@@ -45,7 +45,18 @@ public class GameServiceImpl extends GameServiceGrpc.GameServiceImplBase {
         );
 
         matches.put(matchId, match);
+
+        // TODO 9: recordJoin() is now thread-safe via AtomicInteger
         statistics.recordJoin();
+
+        // TODO 6: Build summary and include it in the response
+        String summary = buildJoinSummary(
+                matchId,
+                match.playerName(),
+                match.opponentName(),
+                difficulty,
+                ranked
+        );
 
         JoinMatchResponse response = JoinMatchResponse.newBuilder()
                 .setMatchId(matchId)
@@ -53,6 +64,8 @@ public class GameServiceImpl extends GameServiceGrpc.GameServiceImplBase {
                 .setOpponentName(match.opponentName())
                 .setMessage("Joined " + match.matchType() + " match " + matchId
                         + " on " + difficulty + " difficulty. Click Play Match to let the server choose a winner.")
+                // TODO 5 / TODO 6: set the new summary field added to the proto
+                .setSummary(summary)
                 .build();
 
         responseObserver.onNext(response);
@@ -80,7 +93,14 @@ public class GameServiceImpl extends GameServiceGrpc.GameServiceImplBase {
             String difficulty,
             boolean ranked
     ) {
-        return "TODO: build join summary";
+        if (matchId == null || matchId.isBlank()) {
+            return "No match";
+        }
+        String p  = (playerName   == null || playerName.isBlank())   ? "Player" : playerName.trim();
+        String o  = (opponentName == null || opponentName.isBlank())  ? "Bot"    : opponentName.trim();
+        String d  = (difficulty   == null || difficulty.isBlank())    ? "Normal" : difficulty.trim();
+        String rt = ranked ? "ranked" : "casual";
+        return "Match " + matchId.trim() + ": " + p + " vs " + o + " (" + d + ", " + rt + ")";
     }
 
     @Override
@@ -106,7 +126,7 @@ public class GameServiceImpl extends GameServiceGrpc.GameServiceImplBase {
         statistics.recordCompletion();
 
         String winner = playerWon ? match.playerName() : match.opponentName();
-        String loser = playerWon ? match.opponentName() : match.playerName();
+        String loser  = playerWon ? match.opponentName() : match.playerName();
 
         MatchResultResponse response = MatchResultResponse.newBuilder()
                 .setMatchId(match.matchId())

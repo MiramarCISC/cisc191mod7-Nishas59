@@ -64,9 +64,9 @@ public class GameController {
         boolean ranked = rankedMatchCheckBox.isSelected();
 
         statusLabel.setText("Status: Joining match...");
-        matchLog.appendText("Joining " + (ranked ? "ranked" : "casual")
-                + " match as " + playerName
-                + " on " + difficulty + " difficulty...\n");
+
+        // TODO 3: Use the helper method instead of building the message inline
+        matchLog.appendText(buildJoinLogMessage(playerName, difficulty, ranked) + "\n");
 
         Task<JoinMatchResponse> task = grpcClient.joinMatchTask(
                 playerName,
@@ -210,7 +210,10 @@ public class GameController {
      * - Trim playerName and difficulty.
      */
     public static String buildJoinLogMessage(String playerName, String difficulty, boolean ranked) {
-        return "TODO: build join log message";
+        String p  = (playerName == null || playerName.isBlank()) ? "Player" : playerName.trim();
+        String d  = (difficulty == null || difficulty.isBlank()) ? "Normal" : difficulty.trim();
+        String rt = ranked ? "ranked" : "casual";
+        return "Joining " + rt + " match as " + p + " on " + d + " difficulty...";
     }
 
     /**
@@ -223,8 +226,13 @@ public class GameController {
      * - Otherwise, schedule it with Platform.runLater(action).
      */
     public static void runOnFxThread(Runnable action) {
-        if (action != null) {
+        if (action == null) {
+            return;
+        }
+        if (Platform.isFxApplicationThread()) {
             action.run();
+        } else {
+            Platform.runLater(action);
         }
     }
 

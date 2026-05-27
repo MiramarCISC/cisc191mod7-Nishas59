@@ -5,7 +5,7 @@ import io.grpc.ServerBuilder;
 
 import java.io.IOException;
 
-public class GameServerMain {
+public class  GameServerMain {
 
     private static final int PORT = 50051;
 
